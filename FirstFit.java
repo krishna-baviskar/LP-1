@@ -1,57 +1,20 @@
-import java.util.Scanner;
-
-public class FirstFit {
-
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-
-        System.out.print("Enter number of processes: ");
-        int n = sc.nextInt();
-
-        int process[] = new int[n];
-        System.out.print("Enter number of memory blocks: ");
-        int m = sc.nextInt();
-        
-	System.out.println("intial memory :");
-        int memory[] = new int[m];
-        for (int i = 0; i < m; i++){
-        	System.out.println(memory[i]+ "KB");
-        }
-        
-
-        for (int i = 0; i < m; i++) {
-            System.out.print("Enter size of memory block " + (i + 1) + ": ");
-            memory[i] = sc.nextInt();
-        }
-
+import java.util.*;
+class FirstFit {
+    public static void main(String[] a) {
+        Scanner s = new Scanner(System.in);
+        System.out.print("Enter processes: ");
+        int n = s.nextInt(), p[] = new int[n];
+        System.out.print("Enter blocks: ");
+        int m = s.nextInt(), b[] = new int[m];
+        for (int i = 0; i < m; i++) b[i] = s.nextInt();
+        for (int i = 0; i < n; i++) p[i] = s.nextInt();
         for (int i = 0; i < n; i++) {
-            System.out.print("Enter memory requirement for process " + (i + 1) + ": ");
-            process[i] = sc.nextInt();
+            boolean f = false;
+            for (int j = 0; j < m; j++)
+                if (b[j] >= p[i]) { b[j] -= p[i]; System.out.println("P" + (i+1) + " -> B" + (j+1)); f = true; break; }
+            if (!f) System.out.println("P" + (i+1) + " not allocated");
         }
-
-        for (int i = 0; i < n; i++) {
-            boolean allocated = false;
-
-            for (int j = 0; j < m; j++) {
-                if (memory[j] >= process[i]) {
-                    memory[j] -= process[i];
-                    System.out.println("Memory allocated to process " + (i + 1) + " in block " + (j + 1));
-                    allocated = true;
-                    break;
-                }
-            }
-            
-
-            if (!allocated) {
-                System.out.println("Memory allocation for process " + (i + 1) + " failed.");
-            }
-        }
-        System.out.println("Fragmented Memory : ");
-        for (int i = 0; i < m; i++){
-        	System.out.println(memory[i]+ "KB");
-        }
-
-        sc.close();
+        System.out.println("Remaining:");
+        for (int i = 0; i < m; i++) System.out.println("B" + (i+1) + ": " + b[i]);
     }
 }
-
