@@ -1,149 +1,53 @@
 import java.util.*;
 
-public class pass1 {
-    
-    // MOT (Machine Opcode Table) for IS, AD, DL
-    static Map IS = new HashMap();
-    static Map AD = new HashMap();
-    static Map DL = new HashMap();
-    static Map REG = new HashMap();
+public class Pass1 {
+    static Map<String,String> IS=new HashMap<>(),AD=new HashMap<>(),DL=new HashMap<>(),REG=new HashMap<>();
+    static List<String> SYM=new ArrayList<>(),LIT=new ArrayList<>(),IC=new ArrayList<>();
+    static Map<String,Integer> SYMADDR=new HashMap<>(),LITADDR=new HashMap<>();
 
-    // SYMTAB and LITTAB
-    static List symtab = new ArrayList();
-    static Map symtabAddr = new HashMap();
+    public static void main(String[]a){
+        IS.put("ADD","01");IS.put("SUB","02");IS.put("MULT","03");IS.put("MOVER","04");
+        IS.put("MOVEM","05");IS.put("COMP","06");IS.put("BC","07");IS.put("DIV","08");
+        IS.put("READ","09");IS.put("PRINT","10");
+        AD.put("START","01");AD.put("END","02");
+        DL.put("DS","01");DL.put("DC","02");
+        REG.put("AREG","1");REG.put("BREG","2");REG.put("CREG","3");REG.put("DREG","4");
 
-    static List littab = new ArrayList();
-    static Map littabAddr = new HashMap();
+        String p[]={"START 200","MOVER AREG,ONE","ADD BREG,TWO","ADD BREG,='5'",
+            "MOVEM CREG,RESULT","ADD BREG,='3'","ONE DS 4","TWO DC 2","RESULT DS 1","END"};
+        pass1(p);
 
-    // IC
-    static List intermediate = new ArrayList();
-
-    public static void main(String[] args) {
-
-        // Initialize MOT
-        IS.put("ADD", "01");
-        IS.put("SUB", "02");
-        IS.put("MULT", "03");
-        IS.put("MOVER", "04");
-        IS.put("MOVEM", "05");
-        IS.put("COMP", "06");
-        IS.put("BC", "07");
-        IS.put("DIV", "08");
-        IS.put("READ", "09");
-        IS.put("PRINT", "10");
-
-        AD.put("START", "01");
-        AD.put("END", "02");
-
-        DL.put("DS", "01");
-        DL.put("DC", "02");
-
-        REG.put("AREG", "1");
-        REG.put("BREG", "2");
-        REG.put("CREG", "3");
-        REG.put("DREG", "4");
-
-        // Example input program
-        String program[] = {
-            "START 200",
-            "MOVER AREG, ONE",
-            "ADD BREG, TWO",
-            "ADD BREG, ='5'",
-            "MOVEM CREG, RESULT",
-            "ADD BREG, ='3'",
-            "ONE DS 4",
-            "TWO DC 2",
-            "RESULT DS 1",
-            "END"
-        };
-
-        pass1(program);
-
-        // Print tables
-        System.out.println("\nSYMTAB:");
-        for (int i = 0; i < symtab.size(); i++) {
-            String sym = symtab.get(i);
-            System.out.println("" + (i) + "  " + sym + "  " + symtabAddr.get(sym));
-        }
-
-        System.out.println("\nLITTAB:");
-        for (int i = 0; i < littab.size(); i++) {
-            String lit = littab.get(i);
-            System.out.println("" + (i) + "  " + lit + "  " + littabAddr.get(lit));
-        }
-
-        System.out.println("\nIntermediate Code:");
-        for (String line : intermediate) {
-            System.out.println(line);
-        }
+        System.out.println("\nSYMTAB:");for(int i=0;i<SYM.size();i++)System.out.println(i+" "+SYM.get(i)+" "+SYMADDR.get(SYM.get(i)));
+        System.out.println("\nLITTAB:");for(int i=0;i<LIT.size();i++)System.out.println(i+" "+LIT.get(i)+" "+LITADDR.get(LIT.get(i)));
+        System.out.println("\nIC:");IC.forEach(System.out::println);
     }
 
-    static void pass1(String[] program) {
-    	String value=null;
-        int lc = 0; // location counter
-
-        for (String line : program) {
-            String parts[] = line.split("[ ,]+"); // split by space or comma
-
-            if (AD.containsKey(parts[0])) {
-                // START / END
-                if (parts[0].equals("START")) {
-                    lc = Integer.parseInt(parts[1]);
-                    intermediate.add("AD " + AD.get("START") + " C " + lc);
-                } else if (parts[0].equals("END")) {
-                    intermediate.add("AD " + AD.get("END"));
-
-                    // Assign addresses to literals
-                    for (int i = 0; i < littab.size(); i++) {
-                        String lit = littab.get(i);
-                        littabAddr.put(lit, lc);
-                        value = lit.substring(2, lit.length() - 1);
-                        intermediate.add("DL " + DL.get("DC") + " C " + value);
-
-                        lc++;
-                    }
-
+    static void pass1(String[]p){
+        int lc=0;String val=null;
+        for(String l:p){
+            String s[]=l.split("[ ,]+");
+            if(AD.containsKey(s[0])){
+                if(s[0].equals("START")){lc=Integer.parseInt(s[1]);IC.add("AD "+AD.get("START")+" C "+lc);}
+                else if(s[0].equals("END")){
+                    IC.add("AD "+AD.get("END"));
+                    for(String lit:LIT){LITADDR.put(lit,lc);val=lit.substring(2,lit.length()-1);
+                        IC.add("DL "+DL.get("DC")+" C "+val);lc++;}}
+            }else if(IS.containsKey(s[0])){
+                String ic="IS "+IS.get(s[0]);
+                if(s.length>1&&REG.containsKey(s[1]))ic+=" RG "+REG.get(s[1]);
+                if(s.length>2){
+                    if(s[2].startsWith("=")){if(!LIT.contains(s[2]))LIT.add(s[2]);
+                        ic+=" L "+LIT.indexOf(s[2]);}
+                    else{if(!SYM.contains(s[2]))SYM.add(s[2]);
+                        ic+=" S "+SYM.indexOf(s[2]);}}
                 }
-            }
-            else if (IS.containsKey(parts[0])) {
-                // Instruction without label
-                String ic = "IS " + IS.get(parts[0]);
-                if (parts.length > 1 && REG.containsKey(parts[1])) {
-                    ic += " RG " + REG.get(parts[1]);
-                }
-                if (parts.length > 2) {
-                    if (parts[2].startsWith("=")) {
-                        // literal
-                        if (!littab.contains(parts[2])) littab.add(parts[2]);
-                        int idx = littab.indexOf(parts[2]);
-                        ic += " L " + idx;
-                    } else {
-                        // symbol
-                        if (!symtab.contains(parts[2])) symtab.add(parts[2]);
-                        int idx = symtab.indexOf(parts[2]);
-                        ic += " S " + idx;
-                    }
-                }
-                intermediate.add(ic);
-                lc++;
-            }
-            else {
-                // Label + DL (DS/DC)
-                String label = parts[0];
-                if (!symtab.contains(label))
-                	symtab.add(label);
-                int idx = symtab.indexOf(label);
-                symtabAddr.put(label, lc);
-
-                if (DL.containsKey(parts[1])) {
-                    if (parts[1].equals("DS")) {
-                        intermediate.add("DL " + DL.get("DS") + " C " + parts[2]);
-                        lc += Integer.parseInt(parts[2]);
-                    } else if (parts[1].equals("DC")) {
-                        intermediate.add("DL " + DL.get("DC") + " C " + parts[2]);
-                        lc++;
-                    }
-                }
+                IC.add(ic);lc++;
+            }else{
+                String lab=s[0];if(!SYM.contains(lab))SYM.add(lab);
+                SYMADDR.put(lab,lc);
+                if(DL.containsKey(s[1])){
+                    if(s[1].equals("DS")){IC.add("DL "+DL.get("DS")+" C "+s[2]);lc+=Integer.parseInt(s[2]);}
+                    else{IC.add("DL "+DL.get("DC")+" C "+s[2]);lc++;}}
             }
         }
     }
