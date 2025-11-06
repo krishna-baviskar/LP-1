@@ -1,161 +1,59 @@
 import java.util.*;
 
 class Process {
-    String pid;
-    int at, bt, ct, wt, tat, rt, priority;
-    boolean completed = false;
-
-    public Process(String pid, int at, int bt, int priority) {
-        this.pid = pid;
-        this.at = at;
-        this.bt = bt;
-        this.rt = bt;
-        this.priority = priority;
-    }
+    String pid; int at, bt, ct, wt, tat, rt, priority; boolean completed = false;
+    Process(String pid, int at, int bt, int pr){ this.pid=pid; this.at=at; this.bt=bt; this.rt=bt; this.priority=pr; }
 }
 
 public class RoundandPrior {
-
-    public static void RoundRobin(List<Process> processes, int quantum) {
-        int time = 0;
-        Queue<Process> queue = new LinkedList<>();
-        int n = processes.size();
-        int completed = 0;
-
-        processes.sort(Comparator.comparingInt(p -> p.at));
-
-        while (completed < n) {
-            for (Process p : processes) {
-                if (p.at <= time && !queue.contains(p) && !p.completed) {
-                    queue.add(p);
-                }
-            }
-
-            if (queue.isEmpty()) {
-                time++;
-                continue;
-            }
-
-            Process current = queue.poll();
-            int execTime = Math.min(current.rt, quantum);
-            time += execTime;
-            current.rt -= execTime;
-
-            for (Process p : processes) {
-                if (p.at <= time && !queue.contains(p) && !p.completed) {
-                    queue.add(p);
-                }
-            }
-
-            if (current.rt == 0) {
-                current.completed = true;
-                current.ct = time;
-                current.tat = current.ct - current.at;
-                current.wt = current.tat - current.bt;
-                completed++;
-            } else {
-                queue.add(current);
-            }
+    static void RoundRobin(List<Process> p, int q){
+        int t=0,c=0,n=p.size(); Queue<Process> ql=new LinkedList<>(); p.sort(Comparator.comparingInt(x->x.at));
+        while(c<n){
+            for(Process x:p) if(x.at<=t&&!ql.contains(x)&&!x.completed) ql.add(x);
+            if(ql.isEmpty()){t++;continue;}
+            Process cur=ql.poll(); int ex=Math.min(cur.rt,q); t+=ex; cur.rt-=ex;
+            for(Process x:p) if(x.at<=t&&!ql.contains(x)&&!x.completed) ql.add(x);
+            if(cur.rt==0){cur.completed=true;cur.ct=t;cur.tat=t-cur.at;cur.wt=cur.tat-cur.bt;c++;} else ql.add(cur);
         }
-
-        printProcesses(processes, "Round Robin");
+        print(p,"Round Robin");
     }
 
-    public static void PriorityScheduling(List<Process> processes) {
-        int time = 0;
-        int completed = 0;
-        int n = processes.size();
-
-        while (completed < n) {
-            Process highest = null;
-
-            for (Process p : processes) {
-                if (!p.completed && p.at <= time) {
-                    if (highest == null || p.priority < highest.priority) {
-                        highest = p;
-                    }
-                }
-            }
-
-            if (highest == null) {
-                time++;
-                continue;
-            }
-
-            time += highest.bt;
-            highest.ct = time;
-            highest.tat = highest.ct - highest.at;
-            highest.wt = highest.tat - highest.bt;
-            highest.completed = true;
-            completed++;
+    static void PriorityScheduling(List<Process> p){
+        int t=0,c=0,n=p.size();
+        while(c<n){
+            Process h=null;
+            for(Process x:p) if(!x.completed&&x.at<=t&&(h==null||x.priority<h.priority)) h=x;
+            if(h==null){t++;continue;}
+            t+=h.bt; h.ct=t; h.tat=h.ct-h.at; h.wt=h.tat-h.bt; h.completed=true; c++;
         }
-
-        printProcesses(processes, "Priority Scheduling (Non-Preemptive)");
+        print(p,"Priority Scheduling");
     }
 
-    public static void printProcesses(List<Process> processes, String title) {
-        System.out.println("\n" + title);
-        System.out.println("PID\tAT\tBT\tPri\tCT\tTAT\tWT");
-        for (Process p : processes) {
-            System.out.printf("%s\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                p.pid, p.at, p.bt, p.priority, p.ct, p.tat, p.wt);
-        }
+    static void print(List<Process> p,String title){
+        System.out.println("\n"+title+"\nPID\tAT\tBT\tPri\tCT\tTAT\tWT");
+        for(Process x:p) System.out.printf("%s\t%d\t%d\t%d\t%d\t%d\t%d\n",x.pid,x.at,x.bt,x.priority,x.ct,x.tat,x.wt);
     }
 
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-
-        System.out.print("Enter number of processes for Round Robin: ");
-        int n1 = sc.nextInt();
-        sc.nextLine();
-
-        List<Process> rrProcesses = new ArrayList<>();
-
-        for (int i = 0; i < n1; i++) {
-            System.out.printf("Enter Process ID for process %d: ", i + 1);
-            String pid = sc.nextLine();
-
-            System.out.printf("Enter Arrival Time for process %s: ", pid);
-            int at = sc.nextInt();
-
-            System.out.printf("Enter Burst Time for process %s: ", pid);
-            int bt = sc.nextInt();
-            sc.nextLine();
-
-            rrProcesses.add(new Process(pid, at, bt, 0));
+    public static void main(String[] a){
+        Scanner sc=new Scanner(System.in);
+        System.out.print("Enter number of processes for RR: "); int n1=sc.nextInt(); sc.nextLine();
+        List<Process> rr=new ArrayList<>();
+        for(int i=0;i<n1;i++){
+            System.out.print("PID: "); String id=sc.nextLine();
+            System.out.print("AT: "); int at=sc.nextInt();
+            System.out.print("BT: "); int bt=sc.nextInt(); sc.nextLine();
+            rr.add(new Process(id,at,bt,0));
         }
-
-        System.out.print("Enter time quantum for Round Robin: ");
-        int quantum = sc.nextInt();
-        sc.nextLine();
-
-        System.out.print("Enter number of processes for Priority Scheduling: ");
-        int n2 = sc.nextInt();
-        sc.nextLine();
-
-        List<Process> prProcesses = new ArrayList<>();
-
-        for (int i = 0; i < n2; i++) {
-            System.out.printf("Enter Process ID for process %d: ", i + 1);
-            String pid = sc.nextLine();
-
-            System.out.printf("Enter Arrival Time for process %s: ", pid);
-            int at = sc.nextInt();
-
-            System.out.printf("Enter Burst Time for process %s: ", pid);
-            int bt = sc.nextInt();
-
-            System.out.printf("Enter Priority for process %s: ", pid);
-            int priority = sc.nextInt();
-            sc.nextLine();
-
-            prProcesses.add(new Process(pid, at, bt, priority));
+        System.out.print("Quantum: "); int q=sc.nextInt();
+        System.out.print("Enter number of processes for Priority: "); int n2=sc.nextInt(); sc.nextLine();
+        List<Process> pr=new ArrayList<>();
+        for(int i=0;i<n2;i++){
+            System.out.print("PID: "); String id=sc.nextLine();
+            System.out.print("AT: "); int at=sc.nextInt();
+            System.out.print("BT: "); int bt=sc.nextInt();
+            System.out.print("Priority: "); int prt=sc.nextInt(); sc.nextLine();
+            pr.add(new Process(id,at,bt,prt));
         }
-
-        RoundRobin(rrProcesses, quantum);
-        PriorityScheduling(prProcesses);
-
-        sc.close();
+        RoundRobin(rr,q); PriorityScheduling(pr); sc.close();
     }
 }
-
