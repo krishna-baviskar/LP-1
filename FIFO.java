@@ -23,6 +23,6 @@ public class FIFO {
             }
             System.out.print(p+"\t"+q+"\n");
         }
-        System.out.println("\nTotal Page Faults: "+faults);
+         System.out.println("\nTotal Page Faults: "+faults);
     }
 }
